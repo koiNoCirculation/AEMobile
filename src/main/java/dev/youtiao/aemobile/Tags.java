@@ -1,4 +1,4 @@
-package com.myname.mymodid;
+package dev.youtiao.aemobile;
 
 // Use this class for Strings only. Do not import any classes here. It will lead to issues with Mixins if in use!
 

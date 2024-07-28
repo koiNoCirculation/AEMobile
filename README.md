@@ -1,80 +1,23 @@
-# Example Forge Mod for Minecraft 1.7.10
+# Minecraft 赛博监工装置
 
-[![](https://jitpack.io/v/SinTh0r4s/ExampleMod1.7.10.svg)](https://jitpack.io/#SinTh0r4s/ExampleMod1.7.10)
-[![](https://github.com/SinTh0r4s/ExampleMod1.7.10/actions/workflows/gradle.yml/badge.svg)](https://github.com/SinTh0r4s/ExampleMod1.7.10/actions/workflows/gradle.yml)
+方块：尼哥监控器  
+放置在ME控制器边上以注册ME网络到http接口  
+合成表：![](./recipe.png)  
+需要配合[尼哥监控器客户端](https://github.com/koiNoCirculation/AEMobile)app使用  
 
-An example mod for Minecraft 1.7.10 with Forge focussed on a stable, updatable setup.
+## 构建
+spring boot的jar包含java9类，不兼容1.7的forgegradle，因此用了一个私货FG构建，否则remap会报错。  
+classpath 'net.minecraftforge.gradle:ForgeGradle:1.2.13.dirty'的版本需要自行进行mvn install。  
+安装命令如下：  
+```bash
+mvn install:install-file -Dfile=ForgeGradle-1.2.13-dirty.jar -Dversion=1.2.13-dirty -DartifactId=ForgeGradle -Dpackaging=jar -DgroupId=net.minecraftforge.gradle
+mvn install:install-file -Dfile=SpecialSource-1.7.3-m-shaded.jar -Dversion=1.7.3-m -DartifactId=SpecialSource -Dpackaging=jar -DgroupId=net.md-5           
+```
+由于spring boot和mc内部的一些包冲突，打包用了包重定位手段，因此直接run client会报错，需要对IDEA的run server和run client进行设置。    
+![](./exclusion.png)
+classpath选项删除，排除掉build/classes/java/main目录以完全把mod的文件排除出去。我们需要使用打好的dev包来运行。  
+复制lib/aemobile-xxx.dirty-dev.jar到run/mods以让GradleStart加载打好包的dev mod，即可完成启动，遇到报错提示，忽视它继续运行即可。  
 
-### Motivation
 
-We had our fair share in struggles with build scripts for Minecraft Forge. There are quite a few pitfalls from non-obvious error messages. This Example Project provides you a build system you can adapt to over 90% of Minecraft Forge mods and can easily be updated if need be.
 
-### Help! I'm stuck!
 
-We all have been there! Check out our [FAQ](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/docs/FAQ.md). If that doesn't help, please open an issue.
-
-### Getting started
-
-Creating mod from scratch:
-1. Unzip [project starter](https://github.com/SinTh0r4s/ExampleMod1.7.10/releases/download/latest-packages/starter.zip) into project directory.
-2. Replace placeholders in LICENSE-template and rename it to LICENSE, or remove LICENSE-template and put any other license you like on your code. This is an permissive OSS project and we encourage you participate in OSS movement by having permissive license like one in template. You can find out pros and cons of OSS software in [this article](https://www.freecodecamp.org/news/what-is-great-about-developing-open-source-and-what-is-not/)
-3. Ensure your project is under VCS. For example initialise git repository by running `git init; git commit --message "initialized repository"`.
-4. Replace placeholders (edit values in gradle.properties, change example package and class names, etc.)
-5. Run `./gradlew setupDecompWorkspace` (if build fails with `Could not find :forgeBin:1.7.10-10.13.4.1614-1.7.10.` this should fix it)
-6. Make sure to check out the rest sections of this file.
-7. You are good to go!
-
-We also have described guidelines for existing mod [migration](docs/migration.md) and [porting](docs/porting.md)
-
-### Features
-
- - Updatable: Replace [`build.gradle`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/build.gradle) with a newer version
- - Optional API artifact (.jar)
- - Optional version replacement in Java files
- - Optional shadowing of dependencies
- - Simplified setup of Mixin and example
- - Scala support (add sources under `src/main/scala/` instead of `src/main/java/`)
- - Optional named developer account for consistent player progression during testing
- - Boilerplate forge mod as starting point
- - Improved warnings for pitfalls
- - Git Tags integration for versioning
- - [Jitpack](https://jitpack.io) CI
- - GitHub CI:
-   - Releasing your artifacts on new tags pushed. Push git tag named after version (e.g. 1.0.0) which will trigger a release of artifacts with according names.
-   - Running smoke test for server startup. On any server crash occurring workflow will fail and print the crash log.
-
-### Files
- - [`build.gradle`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/build.gradle): This is the core script of the build process. You should not need to tamper with it, unless you are trying to accomplish something out of the ordinary. __Do not touch this file! You will make a future update near impossible if you do so!__
- - [`gradle.properties`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/gradle.properties): The core configuration file. It includes 
- - [`dependencies.gradle`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/dependencies.gradle): Add your mod's dependencies in this file. This is separate from the main build script, so you may replace the [`build.gradle`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/build.gradle) if an update is available.
- - [`repositories.gradle`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/repositories.gradle): Add your dependencies' repositories. This is separate from the main build script, so you may replace the [`build.gradle`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/build.gradle) if an update is available.
- - [`jitpack.yml`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/jitpack.yml): Ensures that your mod is available as import over [Jitpack](https://jitpack.io).
- - [`.github/workflows/gradle.yml`](https://github.com/SinTh0r4s/ExampleMod1.7.10/blob/main/.github/workflows/gradle.yml): A simple CI script that will build your mod any time it is pushed to `master` or `main` and publish the result as release in your repository. This feature is free with GitHub if your repository is public.
-
-### Forge's Access Transformers
-
-You may activate Forge's Access Transformers by defining a configuration file in `gradle.properties`.
-
-Check out the [`example-access-transformers`](https://github.com/SinTh0r4s/ExampleMod1.7.10/tree/example-access-transformers) brach for a working example!
-
-__Warning:__ Access Transformers are bugged and will deny you any sources for the decompiled minecraft! Your development environment will still work, but you might face some inconveniences. For example, IntelliJ will not permit searches in dependencies without attached sources.
-
-### Mixins
-
-Mixins are usually used to modify vanilla or mod/library in runtime without having to change source code. For example, redirect a call, change visibility or make class implement your interface. It's an advanced topic and most mods don't need to do that.
-
-You can activate Mixin in 'gradle.properties'. In that case a mixin configuration (usually named `mixins.mymodid.json`) will be generated automatically, and you only have to write the mixins itself. Dependencies are handled as well.
-Take a look at the examples in [`com.myname.mymodid.mixinplugin.*`](https://github.com/SinTh0r4s/ExampleMod1.7.10/tree/example-mixins/src/main/java/com/myname/mymodid/mixinplugin) and [`com.myname.mymodid.mixins.*`](https://github.com/SinTh0r4s/ExampleMod1.7.10/tree/example-mixins/src/main/java/com/myname/mymodid/mixins). 
-
-Check out the [`example-mixins`](https://github.com/SinTh0r4s/ExampleMod1.7.10/tree/example-mixins) brach for a working example!
-
-### Advanced
-
-If your project requires custom gradle commands you may add a `addon.gradle` to your project. It will be added automatically to the build script. Although we recommend against it, it is sometimes required. When in doubt, feel free to ask us about it. You may break future updates of this build system!
-
-### Feedback wanted
-
-If you tried out this build script we would love to head your opinion! Is there any feature missing for you? Did something not work? Please open an issue and we will try to resolve it asap!
-
-Happy modding, \
-[SinTh0r4s](https://github.com/SinTh0r4s), [TheElan](https://github.com/TheElan) and [basdxz](https://github.com/basdxz)

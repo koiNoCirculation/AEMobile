@@ -1,11 +1,16 @@
 // Add your dependencies here
 
 dependencies {
-    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-parent
-    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-parent', version: '3.3.1', ext: 'pom'
-// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web
-    implementation 'org.springframework.boot:spring-boot-starter-web:3.3.1'
-// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-webflux
-    implementation 'org.springframework.boot:spring-boot-starter-webflux:3.3.1'
+    shadowImplementation 'org.springframework.boot:spring-boot:2.7.18'
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web
+    shadowImplementation 'org.springframework.boot:spring-boot-starter-web:2.7.18'
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-webflux
+    shadowImplementation 'org.springframework.boot:spring-boot-starter-webflux:2.7.18'
+    // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-json
+    shadowImplementation group: 'org.springframework.boot', name: 'spring-boot-starter-json', version: '2.7.18'
 
+    // https://mvnrepository.com/artifact/io.netty/netty-all
+    shadowImplementation group: 'io.netty', name: 'netty-all', version: '4.1.101.Final'
+
+    implementation group: 'com.github.GTNewHorizons', name: 'Applied-Energistics-2-Unofficial', version: 'rv3-beta-405-GTNH'
 }

@@ -1,4 +1,4 @@
-package com.myname.mymodid;
+package dev.youtiao.aemobile;
 
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;

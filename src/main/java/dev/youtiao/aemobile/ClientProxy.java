@@ -1,4 +1,4 @@
-package com.myname.mymodid;
+package dev.youtiao.aemobile;
 
 import cpw.mods.fml.common.event.*;
 
