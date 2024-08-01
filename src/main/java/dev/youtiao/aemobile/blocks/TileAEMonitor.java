@@ -333,6 +333,7 @@ public class TileAEMonitor extends TileEntity {
     public void readFromNBT(NBTTagCompound p_145839_1_) {
         super.readFromNBT(p_145839_1_);
         String uuid = p_145839_1_.getString("ownerUUID");
+        if(uuid == null) return;
         String password = uuid.split("-")[0];
         ownerUUID = UUID.fromString(uuid);
         int[] tuple = p_145839_1_.getIntArray("posTuple");
@@ -348,6 +349,7 @@ public class TileAEMonitor extends TileEntity {
     @Override
     public void writeToNBT(NBTTagCompound p_145841_1_) {
         super.writeToNBT(p_145841_1_);
+        if(ownerUUID == null) return;
         p_145841_1_.setString("ownerUUID", ownerUUID.toString());
         p_145841_1_.setIntArray("posTuple", new int[]{posTuple.dimid, posTuple.x, posTuple.y, posTuple.z});
         if(directionAETile != null) {
@@ -359,6 +361,7 @@ public class TileAEMonitor extends TileEntity {
     public void invalidate() {
         super.invalidate();
         if(!worldObj.isRemote) {//Exception
+            if(ownerUUID == null) return;
             String password = ownerUUID.toString().toLowerCase().split("-")[0];
             tilesInTheWorld.get(password).remove(posTuple);
         }
