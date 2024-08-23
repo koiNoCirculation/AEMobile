@@ -628,19 +628,22 @@ public class TileAEMonitor extends TileEntity {
                     i++;
                 }
                 ICraftingJob iCraftingJob = jobFuture.get();
-
-                CraftingCPUCluster finalSelected = selected;
-                ICraftingLink g = finalCg.submitJob(
-                        iCraftingJob,
-                        null,
-                        finalSelected,
-                        true,
-                        new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()));
-                if (g != null) {
-                    return Response.ofSuccess("Successfully submitted craft job");
-                } else {
-                    return Response.ofError("Failed submitting craft job");
-                }
+                final CraftingCPUCluster finalSelected = selected;
+                FutureTask<Response> r = new FutureTask<>(() -> {
+                    ICraftingLink g = finalCg.submitJob(
+                            iCraftingJob,
+                            null,
+                            finalSelected,
+                            true,
+                            new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()));
+                    if (g != null) {
+                        return Response.ofSuccess("Successfully submitted craft job");
+                    } else {
+                        return Response.ofError("Failed submitting craft job");
+                    }
+                });
+                tasks.add(r);
+                return r.get();
             } catch (GridAccessException e) {
                 return Response.ofError(e.getMessage());
             } catch (ExecutionException | InterruptedException e) {
