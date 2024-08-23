@@ -3,6 +3,7 @@ package dev.youtiao.aemobile;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.*;
+import net.minecraftforge.common.config.Configuration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -11,6 +12,14 @@ public class AEMobile {
 
     private static Logger LOG = LogManager.getLogger(Tags.MODID);
 
+    public static String certificate;
+
+    public static String privkey;
+
+    public static int port;
+
+    public static boolean useSSL;
+
     @SidedProxy(clientSide= Tags.GROUPNAME + ".ClientProxy", serverSide=Tags.GROUPNAME + ".CommonProxy")
     public static CommonProxy proxy;
 
@@ -18,6 +27,14 @@ public class AEMobile {
     // preInit "Run before anything else. Read your config, create blocks, items,
     // etc, and register them with the GameRegistry."
     public void preInit(FMLPreInitializationEvent event) {
+        Configuration config = new Configuration(event.getSuggestedConfigurationFile());
+        config.load();
+        port = config.get("server", "port", 44444).getInt();
+        certificate = config.get("ssl","certificate", "/etc/letsencrypt/xxx-01/server.crt", "put your absolute path of SSL cert here").getString();
+        privkey = config.get("ssl", "private-key", "/etc/letsencrypt/xxx-01/server.key",
+                "put your absolute path of SSL private key here").getString();
+        useSSL = config.get("ssl", "enabled", false, "Enable SSL, is required for Apple users to use this app").getBoolean();
+        config.save();
         proxy.preInit(event);
     }
 
