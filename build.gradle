@@ -32,6 +32,10 @@ buildscript {
             name = "jitpack"
             url = "https://jitpack.io"
         }
+        maven {
+            name = "plugins"
+            url = "https://plugins.gradle.org/m2"
+        }
     }
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:1.2.13.dirty'
@@ -42,7 +46,7 @@ buildscript {
 plugins {
     id 'idea'
     id 'scala'
-    id("org.ajoberstar.grgit") version("3.1.1")
+    id("org.ajoberstar.grgit") version("2.3.0")
     id("com.github.johnrengelman.shadow") version("4.0.4")
     id("com.palantir.git-version") version("0.12.3")
     id("maven-publish")

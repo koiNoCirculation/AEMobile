@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -599,56 +600,50 @@ public class TileAEMonitor extends TileEntity {
                 AEItemStack aeItemStack = AEItemStack.create(itemStack);
                 aeItemStack.setStackSize(request.count);
                 ICraftingGrid finalCg = cg;
-                FutureTask<Response> responseFutureTask = new FutureTask<>(() -> {
-                    Future<ICraftingJob> jobFuture;
-                    if (finalCg instanceof CraftingGridCache) {
+                Future<ICraftingJob> jobFuture;
+                if (finalCg instanceof CraftingGridCache) {
 
-                        jobFuture = ((CraftingGridCache) finalCg).beginCraftingJob(
-                                worldObj,
-                                gridProxyable.getProxy().getGrid(),
-                                new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()),
-                                aeItemStack,
-                                CraftingMode.STANDARD,
-                                null);
-                    } else {
-                        jobFuture = finalCg.beginCraftingJob(
-                                worldObj,
-                                gridProxyable.getProxy().getGrid(),
-                                new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()),
-                                aeItemStack,
-                                null);
+                    jobFuture = ((CraftingGridCache) finalCg).beginCraftingJob(
+                            worldObj,
+                            gridProxyable.getProxy().getGrid(),
+                            new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()),
+                            aeItemStack,
+                            CraftingMode.STANDARD,
+                            null);
+                } else {
+                    jobFuture = finalCg.beginCraftingJob(
+                            worldObj,
+                            gridProxyable.getProxy().getGrid(),
+                            new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()),
+                            aeItemStack,
+                            null);
+                }
+                int i = 0;
+                CraftingCPUCluster selected = null;
+                for (ICraftingCPU cpu : ((IGridProxyable) tileEntity).getProxy().getCrafting().getCpus()) {
+                    if (i == request.cpuId - 1) {
+                        selected = (CraftingCPUCluster) cpu;
+                        break;
                     }
-                    int i = 0;
-                    CraftingCPUCluster selected = null;
-                    for (ICraftingCPU cpu : ((IGridProxyable) tileEntity).getProxy().getCrafting().getCpus()) {
-                        if(i == request.cpuId - 1) {
-                            selected =(CraftingCPUCluster) cpu;
-                            break;
-                        }
-                        i++;
-                    }
-                    ICraftingJob iCraftingJob = jobFuture.get();
+                    i++;
+                }
+                ICraftingJob iCraftingJob = jobFuture.get();
 
-                    CraftingCPUCluster finalSelected = selected;
-                    ICraftingLink g = finalCg.submitJob(
-                            iCraftingJob,
-                            null,
-                            (finalSelected == null) ? null : finalSelected,
-                            true,
-                            new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()));
-                    if (g != null) {
-                        return Response.ofSuccess("Successfully submitted craft job");
-                    } else {
-                        return Response.ofError("Failed submitting craft job");
-                    }
-                });
-                tasks.add(responseFutureTask);
-                return responseFutureTask.get();
+                CraftingCPUCluster finalSelected = selected;
+                ICraftingLink g = finalCg.submitJob(
+                        iCraftingJob,
+                        null,
+                        finalSelected,
+                        true,
+                        new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()));
+                if (g != null) {
+                    return Response.ofSuccess("Successfully submitted craft job");
+                } else {
+                    return Response.ofError("Failed submitting craft job");
+                }
             } catch (GridAccessException e) {
                 return Response.ofError(e.getMessage());
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
+            } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
         } else {
