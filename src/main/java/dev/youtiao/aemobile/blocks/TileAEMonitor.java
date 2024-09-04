@@ -9,6 +9,7 @@ import appeng.api.networking.crafting.ICraftingJob;
 import appeng.api.networking.crafting.ICraftingLink;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.networking.security.MachineSource;
+import appeng.api.networking.security.PlayerSource;
 import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEMonitor;
@@ -21,12 +22,14 @@ import appeng.me.helpers.IGridProxyable;
 import appeng.util.item.AEItemStack;
 import appeng.util.item.ItemList;
 import com.google.common.collect.ImmutableList;
+import dev.youtiao.aemobile.web.util.FakePlayerGetCraftFailure;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.util.ForgeDirection;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -637,17 +640,18 @@ public class TileAEMonitor extends TileEntity {
                 }
                 ICraftingJob iCraftingJob = jobFuture.get();
                 final CraftingCPUCluster finalSelected = selected;
+                FakePlayerGetCraftFailure errorRetriever = new FakePlayerGetCraftFailure((WorldServer) worldObj, null);
                 FutureTask<Response> r = new FutureTask<>(() -> {
                     ICraftingLink g = finalCg.submitJob(
                             iCraftingJob,
                             null,
                             finalSelected,
                             true,
-                            new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()));
+                            new PlayerSource(errorRetriever, (IActionHost) gridProxyable.getProxy().getMachine()));
                     if (g != null) {
                         return Response.ofSuccess("Successfully submitted craft job");
                     } else {
-                        return Response.ofError("Failed submitting craft job");
+                        return Response.ofError(errorRetriever.getErrorMessage());
                     }
                 });
                 tasks.add(r);
