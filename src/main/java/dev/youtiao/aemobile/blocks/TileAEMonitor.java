@@ -148,13 +148,17 @@ public class TileAEMonitor extends TileEntity {
 
         private int cpuId;
 
+        private boolean allowMissing;
+
         private String nbt;
 
-        public CraftRequest(String item_name, int meta, long count, int cpuId) {
+        public CraftRequest(String item_name, int meta, long count, int cpuId, String nbt, boolean allowMissing) {
             this.item_name = item_name;
             this.meta = meta;
             this.count = count;
             this.cpuId = cpuId;
+            this.allowMissing = allowMissing;
+            this.nbt = nbt;
         }
 
         public String getItem_name() {
@@ -171,6 +175,10 @@ public class TileAEMonitor extends TileEntity {
 
         public String getNbt() {
             return nbt;
+        }
+
+        public boolean isAllowMissing() {
+            return allowMissing;
         }
     }
 
@@ -596,7 +604,7 @@ public class TileAEMonitor extends TileEntity {
                 ICraftingGrid cg = null;
                 cg = gridProxyable.getProxy().getGrid().getCache(ICraftingGrid.class);
                 ItemStack itemStack = new ItemStack((Item) Item.itemRegistry.getObject(request.item_name), 1, request.meta);
-                itemStack.setTagCompound(readNBTFromBase64(request.nbt));
+                itemStack.setTagCompound(readNBTFromBase64(request.getNbt()));
                 AEItemStack aeItemStack = AEItemStack.create(itemStack);
                 aeItemStack.setStackSize(request.count);
                 ICraftingGrid finalCg = cg;
@@ -608,7 +616,7 @@ public class TileAEMonitor extends TileEntity {
                             gridProxyable.getProxy().getGrid(),
                             new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()),
                             aeItemStack,
-                            CraftingMode.STANDARD,
+                            request.allowMissing ? CraftingMode.IGNORE_MISSING : CraftingMode.STANDARD,
                             null);
                 } else {
                     jobFuture = finalCg.beginCraftingJob(
