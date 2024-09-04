@@ -9,6 +9,7 @@ import appeng.api.networking.crafting.ICraftingJob;
 import appeng.api.networking.crafting.ICraftingLink;
 import appeng.api.networking.security.IActionHost;
 import appeng.api.networking.security.MachineSource;
+import appeng.api.networking.security.PlayerSource;
 import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.storage.IMEInventory;
 import appeng.api.storage.IMEMonitor;
@@ -21,12 +22,15 @@ import appeng.me.helpers.IGridProxyable;
 import appeng.util.item.AEItemStack;
 import appeng.util.item.ItemList;
 import com.google.common.collect.ImmutableList;
+import com.mojang.authlib.GameProfile;
+import dev.youtiao.aemobile.web.util.FakePlayerGetCraftFailure;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.util.ForgeDirection;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -55,7 +59,7 @@ import java.util.stream.Collectors;
 
 public class TileAEMonitor extends TileEntity {
 
-
+    private static final GameProfile FAKEUUID = new GameProfile( UUID.randomUUID(), "NIGGER");
     public static Map<String, Set<PosTuple>> tilesInTheWorld = new HashMap<>();
 
     private PosTuple posTuple;
@@ -148,13 +152,17 @@ public class TileAEMonitor extends TileEntity {
 
         private int cpuId;
 
+        private boolean allowMissing;
+
         private String nbt;
 
-        public CraftRequest(String item_name, int meta, long count, int cpuId) {
+        public CraftRequest(String item_name, int meta, long count, int cpuId, String nbt, boolean allowMissing) {
             this.item_name = item_name;
             this.meta = meta;
             this.count = count;
             this.cpuId = cpuId;
+            this.allowMissing = allowMissing;
+            this.nbt = nbt;
         }
 
         public String getItem_name() {
@@ -171,6 +179,10 @@ public class TileAEMonitor extends TileEntity {
 
         public String getNbt() {
             return nbt;
+        }
+
+        public boolean isAllowMissing() {
+            return allowMissing;
         }
     }
 
@@ -596,7 +608,7 @@ public class TileAEMonitor extends TileEntity {
                 ICraftingGrid cg = null;
                 cg = gridProxyable.getProxy().getGrid().getCache(ICraftingGrid.class);
                 ItemStack itemStack = new ItemStack((Item) Item.itemRegistry.getObject(request.item_name), 1, request.meta);
-                itemStack.setTagCompound(readNBTFromBase64(request.nbt));
+                itemStack.setTagCompound(readNBTFromBase64(request.getNbt()));
                 AEItemStack aeItemStack = AEItemStack.create(itemStack);
                 aeItemStack.setStackSize(request.count);
                 ICraftingGrid finalCg = cg;
@@ -608,7 +620,7 @@ public class TileAEMonitor extends TileEntity {
                             gridProxyable.getProxy().getGrid(),
                             new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()),
                             aeItemStack,
-                            CraftingMode.STANDARD,
+                            request.allowMissing ? CraftingMode.IGNORE_MISSING : CraftingMode.STANDARD,
                             null);
                 } else {
                     jobFuture = finalCg.beginCraftingJob(
@@ -628,19 +640,23 @@ public class TileAEMonitor extends TileEntity {
                     i++;
                 }
                 ICraftingJob iCraftingJob = jobFuture.get();
-
-                CraftingCPUCluster finalSelected = selected;
-                ICraftingLink g = finalCg.submitJob(
-                        iCraftingJob,
-                        null,
-                        finalSelected,
-                        true,
-                        new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()));
-                if (g != null) {
-                    return Response.ofSuccess("Successfully submitted craft job");
-                } else {
-                    return Response.ofError("Failed submitting craft job");
-                }
+                final CraftingCPUCluster finalSelected = selected;
+                FakePlayerGetCraftFailure errorRetriever = new FakePlayerGetCraftFailure((WorldServer) worldObj, FAKEUUID);
+                FutureTask<Response> r = new FutureTask<>(() -> {
+                    ICraftingLink g = finalCg.submitJob(
+                            iCraftingJob,
+                            null,
+                            finalSelected,
+                            true,
+                            new PlayerSource(errorRetriever, (IActionHost) gridProxyable.getProxy().getMachine()));
+                    if (g != null) {
+                        return Response.ofSuccess("Successfully submitted craft job");
+                    } else {
+                        return Response.ofError(errorRetriever.getErrorMessage());
+                    }
+                });
+                tasks.add(r);
+                return r.get();
             } catch (GridAccessException e) {
                 return Response.ofError(e.getMessage());
             } catch (ExecutionException | InterruptedException e) {

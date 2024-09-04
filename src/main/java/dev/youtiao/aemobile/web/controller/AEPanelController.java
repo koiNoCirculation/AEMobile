@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
@@ -166,7 +167,9 @@ public class AEPanelController {
                                                        @RequestParam String item,
                                                        @RequestParam int meta,
                                                        @RequestParam long count,
-                                                       @RequestParam int cpuId) {
+                                                       @RequestParam int cpuId,
+                                                       @RequestParam @Nullable String nbt,
+                                                       @RequestParam boolean allowMissing) {
         Set<TileAEMonitor.PosTuple> tuples = TileAEMonitor.tilesInTheWorld.get(ownerUUID.toLowerCase());
         if (tuples == null) {
             return TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID));
@@ -174,7 +177,7 @@ public class AEPanelController {
         if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
             TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
             if (tileEntity != null) {
-                return ((TileAEMonitor)tileEntity).submitCraftJob(new TileAEMonitor.CraftRequest(item, meta, count, cpuId));
+                return ((TileAEMonitor)tileEntity).submitCraftJob(new TileAEMonitor.CraftRequest(item, meta, count, cpuId, nbt, allowMissing));
             } else {
                 return TileAEMonitor.Response.ofError("Internal error");
             }
