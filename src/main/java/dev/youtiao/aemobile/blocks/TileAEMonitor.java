@@ -22,6 +22,7 @@ import appeng.me.helpers.IGridProxyable;
 import appeng.util.item.AEItemStack;
 import appeng.util.item.ItemList;
 import com.google.common.collect.ImmutableList;
+import com.mojang.authlib.GameProfile;
 import dev.youtiao.aemobile.web.util.FakePlayerGetCraftFailure;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -58,7 +59,7 @@ import java.util.stream.Collectors;
 
 public class TileAEMonitor extends TileEntity {
 
-
+    private static final GameProfile FAKEUUID = new GameProfile( UUID.randomUUID(), "NIGGER");
     public static Map<String, Set<PosTuple>> tilesInTheWorld = new HashMap<>();
 
     private PosTuple posTuple;
@@ -640,7 +641,7 @@ public class TileAEMonitor extends TileEntity {
                 }
                 ICraftingJob iCraftingJob = jobFuture.get();
                 final CraftingCPUCluster finalSelected = selected;
-                FakePlayerGetCraftFailure errorRetriever = new FakePlayerGetCraftFailure((WorldServer) worldObj, null);
+                FakePlayerGetCraftFailure errorRetriever = new FakePlayerGetCraftFailure((WorldServer) worldObj, FAKEUUID);
                 FutureTask<Response> r = new FutureTask<>(() -> {
                     ICraftingLink g = finalCg.submitJob(
                             iCraftingJob,
