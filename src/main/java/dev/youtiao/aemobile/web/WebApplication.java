@@ -8,6 +8,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 @SpringBootApplication
 @Configuration
 @ComponentScan
+@EnableAsync
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration.class})
 public class WebApplication extends Thread implements ApplicationContextAware {
     private static ApplicationContext applicationContext;

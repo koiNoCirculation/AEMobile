@@ -1,0 +1,4 @@
+[submodule "fe"]
+	path = AEMonitor-Frontend
+	url = https://github.com/koiNoCirculation/AEMonitor-Frontend
+	branch = main

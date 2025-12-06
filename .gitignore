@@ -29,3 +29,6 @@ src/main/resources/mixins.*.json
 *.bat
 *.DS_Store
 !gradlew.bat
+src/main/resources/static
+.expo
+vscode

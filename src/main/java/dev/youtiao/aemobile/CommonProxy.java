@@ -1,6 +1,7 @@
 package dev.youtiao.aemobile;
 
 import appeng.core.AppEng;
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.event.*;
 import cpw.mods.fml.common.registry.FMLControlledNamespacedRegistry;
 import cpw.mods.fml.common.registry.GameData;
@@ -15,6 +16,7 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.CraftingManager;
+import net.minecraftforge.common.MinecraftForge;
 
 import static net.minecraft.block.Block.soundTypePiston;
 
@@ -50,6 +52,7 @@ public class CommonProxy {
                         Item.itemRegistry.getObject("appliedenergistics2:item.ItemBasicStorageCell.16k")
                         ,'#',Item.itemRegistry.getObject("appliedenergistics2:tile.BlockFluix")}
         );
+        FMLCommonHandler.instance().bus().register(new MSPTListener());
     }
 
     public void serverAboutToStart(FMLServerAboutToStartEvent event) {
@@ -62,11 +65,9 @@ public class CommonProxy {
     }
 
     public void serverStarted(FMLServerStartedEvent event) {
-        if(event.getSide().isServer()) {
-            WebApplication webApplication = new WebApplication();
-            webApplication.setDaemon(false);
-            webApplication.start();
-        }
+        WebApplication webApplication = new WebApplication();
+        webApplication.setDaemon(false);
+        webApplication.start();
     }
 
     public void serverStopping(FMLServerStoppingEvent event) {

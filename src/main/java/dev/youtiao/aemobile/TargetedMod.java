@@ -14,7 +14,8 @@ public enum TargetedMod {
 
     // Replace with your injected mods here, but always keep VANILLA:
     VANILLA("Minecraft", "unused", true),
-    AEMOBILE("assets/AEMobile", "aemobile", true);
+    AEMOBILE("assets/AEMobile", "aemobile", true),
+    NEI("NotEnoughItems", "notenoughitems", true);
 
     public final String modName;
     public final String jarNamePrefixLowercase;
