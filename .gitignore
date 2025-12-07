@@ -31,4 +31,4 @@ src/main/resources/mixins.*.json
 !gradlew.bat
 src/main/resources/static
 .expo
-vscode
+.vscode
