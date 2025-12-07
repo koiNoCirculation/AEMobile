@@ -38,8 +38,12 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2.13.dirty'
-        //classpath 'com.github.GTNewHorizons:ForgeGradle:1.2.11'
+        classpath('com.github.GTNewHorizons:ForgeGradle:1.2.13') {
+            exclude group: 'net.md-5', module: 'SpecialSource'
+            exclude group: 'org.ow2.asm', module: 'asm-debug-all'
+        }
+        classpath("org.ow2.asm:asm-commons:6.1.1")
+        classpath("net.md-5:SpecialSource:1.8.5")
     }
 }
 
@@ -51,7 +55,6 @@ plugins {
     id("com.palantir.git-version") version("0.12.3")
     id("maven-publish")
 }
-
 apply plugin: 'forge'
 
 def projectJavaVersion = JavaLanguageVersion.of(8)
