@@ -11,6 +11,6 @@ dependencies {
 
     // https://mvnrepository.com/artifact/io.netty/netty-all
     shadowImplementation group: 'io.netty', name: 'netty-all', version: '4.1.101.Final'
-
+    implementation group: 'com.github.GTNewHorizons', name: 'NotEnoughItems', version: '2.6.1-GTNH'
     implementation group: 'com.github.GTNewHorizons', name: 'Applied-Energistics-2-Unofficial', version: 'rv3-beta-405-GTNH'
 }

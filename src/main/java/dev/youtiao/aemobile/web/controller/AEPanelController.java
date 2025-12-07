@@ -5,6 +5,7 @@ import dev.youtiao.aemobile.blocks.TileAEMonitor;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.DimensionManager;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,7 @@ import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,12 +27,14 @@ import java.util.concurrent.Executors;
 @RequestMapping(("/AE2"))
 public class AEPanelController {
     private ExecutorService executorService = Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors());
+
     @GetMapping("/getNetworks")
     public TileAEMonitor.Response getNetworks(@RequestParam String ownerUUID) {
         System.out.println(TileAEMonitor.tilesInTheWorld);
         System.out.println(ownerUUID);
         return TileAEMonitor.Response.ofSuccess(TileAEMonitor.tilesInTheWorld.getOrDefault(ownerUUID.toLowerCase(), new HashSet<>()));
     }
+
     @PostMapping("/cancelTask")
     public TileAEMonitor.Response cancelTask(@RequestParam String ownerUUID, @RequestParam int dimid,
                                              @RequestParam int x, @RequestParam int y, @RequestParam int z, @RequestParam int cpuid) throws ExecutionException, InterruptedException {
@@ -41,7 +45,7 @@ public class AEPanelController {
         if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
             TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
             if (tileEntity != null) {
-                ((TileAEMonitor)tileEntity).cancelTask(cpuid);
+                ((TileAEMonitor) tileEntity).cancelTask(cpuid);
                 return TileAEMonitor.Response.ofSuccess("Success");
             } else {
                 return TileAEMonitor.Response.ofError("Internal error");
@@ -63,8 +67,7 @@ public class AEPanelController {
                     <TileAEMonitor.Response>builder().id(seq.toString()).event("message");
             if (tuples == null) {
                 ev.data(TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID)));
-            }
-            else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
+            } else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
                 TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
                 if (tileEntity != null) {
                     try {
@@ -82,17 +85,17 @@ public class AEPanelController {
         });
     }
 
+
     @GetMapping("/getCraftingCpuInfoNoSSE")
     public TileAEMonitor.Response getCraftingCPUInfoNoSSE(@RequestParam String ownerUUID,
-                                                                            @RequestParam int dimid,
-                                                                            @RequestParam int x,
-                                                                            @RequestParam int y,
-                                                                            @RequestParam int z) throws ExecutionException, InterruptedException {
+                                                          @RequestParam int dimid,
+                                                          @RequestParam int x,
+                                                          @RequestParam int y,
+                                                          @RequestParam int z) throws ExecutionException, InterruptedException {
         Set<TileAEMonitor.PosTuple> tuples = TileAEMonitor.tilesInTheWorld.get(ownerUUID.toLowerCase());
         if (tuples == null) {
             return TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID));
-        }
-        else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
+        } else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
             TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
             if (tileEntity != null) {
                 return ((TileAEMonitor) tileEntity).getCraftingCPUInfo();
@@ -125,17 +128,16 @@ public class AEPanelController {
                 if (tuples == null) {
                     ev.data(TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID)));
 
-                }
-                else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
+                } else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
                     TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
                     if (tileEntity != null) {
-                        if(craftingJob[0] == null) {
-                            craftingJob[0] = ((TileAEMonitor)tileEntity).generateCraftingPlan(item, meta, nbt, count);
+                        if (craftingJob[0] == null) {
+                            craftingJob[0] = ((TileAEMonitor) tileEntity).generateCraftingPlan(item, meta, nbt, count);
                         }
 
                         while (craftingJob[0].simulateFor(1500)) {
                             SseEmitter.SseEventBuilder simulating = SseEmitter.event().id(String.valueOf(i)).name("message");
-                            simulating.data(TileAEMonitor.Response.ofSuccess("SIMULATING - resolved: " +  craftingJob[0].getContext().getResolvedTasks().size()));
+                            simulating.data(TileAEMonitor.Response.ofSuccess("SIMULATING - resolved: " + craftingJob[0].getContext().getResolvedTasks().size()));
                             emitter.send(simulating);
                         }
                         SseEmitter.SseEventBuilder result = SseEmitter.event().id(String.valueOf(i)).name("message");
@@ -155,11 +157,12 @@ public class AEPanelController {
                 emitter.completeWithError(e);
             }
         });
-       return  emitter;
+        return emitter;
     }
 
-    @PostMapping("/startCraftingJob")
-    public TileAEMonitor.Response startCraftingJob(@RequestParam String ownerUUID,
+    @PostMapping("/generateCraftingPlanNoSSE")
+    @Async
+    public CompletableFuture<TileAEMonitor.Response> generateCraftingPlanNoSSE(@RequestParam String ownerUUID,
                                                        @RequestParam int dimid,
                                                        @RequestParam int x,
                                                        @RequestParam int y,
@@ -167,9 +170,50 @@ public class AEPanelController {
                                                        @RequestParam String item,
                                                        @RequestParam int meta,
                                                        @RequestParam long count,
-                                                       @RequestParam int cpuId,
-                                                       @RequestParam @Nullable String nbt,
-                                                       @RequestParam boolean allowMissing) {
+                                                       @RequestParam(required = false) String nbt) {
+        Set<TileAEMonitor.PosTuple> tuples = TileAEMonitor.tilesInTheWorld.get(ownerUUID.toLowerCase());
+        CraftingJobV2[] craftingJob = new CraftingJobV2[1];
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                int i = 0;
+                if (tuples == null) {
+                    return TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID));
+
+                } else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
+                    TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
+                    if (tileEntity != null) {
+                        if (craftingJob[0] == null) {
+                            craftingJob[0] = ((TileAEMonitor) tileEntity).generateCraftingPlan(item, meta, nbt, count);
+                        }
+
+                        while (craftingJob[0].simulateFor(50)) {
+                        }
+                        return ((TileAEMonitor) tileEntity).populatePlan(craftingJob[0]);
+                    } else {
+                        return TileAEMonitor.Response.ofError("Internal error");
+                    }
+                } else {
+                    return TileAEMonitor.Response.ofError(String.format("No ae monitor block placed at Dim %d, x=%d, y=%d, z=%d", dimid, x, y, z));
+                }
+
+            } catch (Exception e) {
+                return TileAEMonitor.Response.ofError(e.getMessage());
+            }
+        }, executorService);
+    }
+
+    @PostMapping("/startCraftingJob")
+    public TileAEMonitor.Response startCraftingJob(@RequestParam String ownerUUID,
+                                                   @RequestParam int dimid,
+                                                   @RequestParam int x,
+                                                   @RequestParam int y,
+                                                   @RequestParam int z,
+                                                   @RequestParam String item,
+                                                   @RequestParam int meta,
+                                                   @RequestParam long count,
+                                                   @RequestParam int cpuId,
+                                                   @RequestParam @Nullable String nbt,
+                                                   @RequestParam boolean allowMissing) {
         Set<TileAEMonitor.PosTuple> tuples = TileAEMonitor.tilesInTheWorld.get(ownerUUID.toLowerCase());
         if (tuples == null) {
             return TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID));
@@ -177,7 +221,7 @@ public class AEPanelController {
         if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
             TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
             if (tileEntity != null) {
-                return ((TileAEMonitor)tileEntity).submitCraftJob(new TileAEMonitor.CraftRequest(item, meta, count, cpuId, nbt, allowMissing));
+                return ((TileAEMonitor) tileEntity).submitCraftJob(new TileAEMonitor.CraftRequest(item, meta, count, cpuId, nbt, allowMissing));
             } else {
                 return TileAEMonitor.Response.ofError("Internal error");
             }
@@ -187,15 +231,13 @@ public class AEPanelController {
     }
 
 
-
-
     @GetMapping("/getCraftingDetails")
     public Flux<ServerSentEvent<TileAEMonitor.Response>> getCraftingDetails(@RequestParam String ownerUUID,
-                                                                                        @RequestParam int dimid,
-                                                                                        @RequestParam int x,
-                                                                                        @RequestParam int y,
-                                                                                        @RequestParam int z,
-                                                                                        @RequestParam int cpuid) {
+                                                                            @RequestParam int dimid,
+                                                                            @RequestParam int x,
+                                                                            @RequestParam int y,
+                                                                            @RequestParam int z,
+                                                                            @RequestParam int cpuid) {
 
         Set<TileAEMonitor.PosTuple> tuples = TileAEMonitor.tilesInTheWorld.get(ownerUUID.toLowerCase());
         return Flux.interval(Duration.ofSeconds(0), Duration.ofSeconds(5)).map(seq -> {
@@ -203,8 +245,7 @@ public class AEPanelController {
                             <TileAEMonitor.Response>builder().id(seq.toString()).event("message");
                     if (tuples == null) {
                         ev = ev.data(TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID)));
-                    }
-                    else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
+                    } else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
                         TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
                         if (tileEntity != null) {
                             ev = ev.data(((TileAEMonitor) tileEntity).getCraftingStatus(cpuid));
@@ -217,6 +258,29 @@ public class AEPanelController {
                     return ev.build();
                 }
         );
+    }
+
+    @GetMapping("/getCraftingDetailsNoSSE")
+    public TileAEMonitor.Response getCraftingDetailsNoSSE(@RequestParam String ownerUUID,
+                            @RequestParam int dimid,
+                            @RequestParam int x,
+                            @RequestParam int y,
+                            @RequestParam int z,
+                            @RequestParam int cpuid) {
+
+        Set<TileAEMonitor.PosTuple> tuples = TileAEMonitor.tilesInTheWorld.get(ownerUUID.toLowerCase());
+        if (tuples == null) {
+            return TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID));
+        } else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
+            TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
+            if (tileEntity != null) {
+                return ((TileAEMonitor) tileEntity).getCraftingStatus(cpuid);
+            } else {
+                return TileAEMonitor.Response.ofError("Internal error");
+            }
+        } else {
+            return TileAEMonitor.Response.ofError(String.format("No ae monitor block placed at Dim %d, x=%d, y=%d, z=%d", dimid, x, y, z));
+        }
     }
 
     @GetMapping("/getItems")
@@ -233,8 +297,7 @@ public class AEPanelController {
                     <TileAEMonitor.Response>builder().id(seq.toString()).event("message");
             if (tuples == null) {
                 ev = ev.data(TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID)));
-            }
-            else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
+            } else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
                 TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
                 if (tileEntity != null) {
                     ev = ev.data(((TileAEMonitor) tileEntity).getAllStoredItems(craftableOnly));
@@ -246,5 +309,28 @@ public class AEPanelController {
             }
             return ev.build();
         });
+    }
+
+    @GetMapping("/getItemsNoSSE")
+    public TileAEMonitor.Response getItemsNoSSE(@RequestParam String ownerUUID,
+                                                @RequestParam int dimid,
+                                                @RequestParam int x,
+                                                @RequestParam int y,
+                                                @RequestParam int z,
+                                                @RequestParam boolean craftableOnly) {
+
+        Set<TileAEMonitor.PosTuple> tuples = TileAEMonitor.tilesInTheWorld.get(ownerUUID.toLowerCase());
+        if (tuples == null) {
+            return TileAEMonitor.Response.ofError(String.format("UUID %s has not placed any ae monitor blocks in the world", ownerUUID));
+        } else if (tuples.contains(new TileAEMonitor.PosTuple(dimid, x, y, z))) {
+            TileEntity tileEntity = DimensionManager.getWorld(dimid).getTileEntity(x, y, z);
+            if (tileEntity != null) {
+                return ((TileAEMonitor) tileEntity).getAllStoredItems(craftableOnly);
+            } else {
+                return TileAEMonitor.Response.ofError("Internal error");
+            }
+        } else {
+            return TileAEMonitor.Response.ofError(String.format("No ae monitor block placed at Dim %d, x=%d, y=%d, z=%d", dimid, x, y, z));
+        }
     }
 }

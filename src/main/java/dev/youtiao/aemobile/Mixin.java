@@ -18,7 +18,7 @@ public enum Mixin {
 
     // Replace with your own mixins:
     // You may also require multiple mods to be loaded if your mixin requires both
-    GT_Block_Ores_AbstractMixin("MixinMinecraftServer", AEMOBILE, VANILLA);
+    AEMobile("MixinGuiitemIconDumper", Side.CLIENT, TargetedMod.NEI);
 
     public final String mixinClass;
     public final List<TargetedMod> targetedMods;

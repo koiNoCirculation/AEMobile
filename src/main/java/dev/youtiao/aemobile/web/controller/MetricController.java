@@ -19,9 +19,9 @@ public class MetricController {
     @GetMapping("/api/serverMSPT")
     public Flux<ServerSentEvent<String>> mspt() {
         //5s, 30s, 300s
-        return Flux.interval(Duration.ofSeconds(5)).map(seq -> {
+        return Flux.interval(Duration.ofSeconds(1)).map(seq -> {
             float[] serverMSPT = msptService.getServerMSPT();
-            System.out.println(Arrays.toString(serverMSPT));
+            //System.out.println(Arrays.toString(serverMSPT));
             return ServerSentEvent.<String>builder().id(seq.toString()).event("message").
                     data(String.format("%s,%s,%s", serverMSPT[0], serverMSPT[1], serverMSPT[2])).build();
         });

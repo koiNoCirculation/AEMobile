@@ -68,7 +68,10 @@ public class TileAEMonitor extends TileEntity {
     private UUID ownerUUID;
 
     private ArrayDeque<FutureTask<?>> tasks = new ArrayDeque<>();
-
+    String getIcon(ItemStack stack) {
+        String name = Item.itemRegistry.getNameForObject(stack.getItem()) + "_" + stack.getItemDamage() +  "_tag_" + TileAEMonitor.writeNBTAsBase64(stack.getTagCompound());
+        return String.format("icons/%s.png", name.replace("/","_").replace(":","_"));
+    }
     public static class Response<T> {
         private T body;
         private boolean succeed;
@@ -115,9 +118,9 @@ public class TileAEMonitor extends TileEntity {
 
     public class ItemStackResponse {
         private String item_name;   //Item.itemRegistry.getNameForObject(stack.getItem())
-
+        private String displayname;
         private int meta;
-
+        private String icon;
         private String nbt;
         private long count;
         private boolean craftable;
@@ -140,6 +143,22 @@ public class TileAEMonitor extends TileEntity {
 
         public String getNbt() {
             return nbt;
+        }
+
+        public String getIcon() {
+            return icon;
+        }
+
+        public void setIcon(String icon) {
+            this.icon = icon;
+        }
+
+        public String getDisplayname() {
+            return displayname;
+        }
+
+        public void setDisplayname(String displayname) {
+            this.displayname = displayname;
         }
     }
 
@@ -235,7 +254,8 @@ public class TileAEMonitor extends TileEntity {
         private String cpuName;
         private int meta;
         private String item;
-
+        private String displayname;
+        private String icon;
         private String nbt;
         private long storage;
         private long parallelism;
@@ -276,12 +296,29 @@ public class TileAEMonitor extends TileEntity {
         public String getNbt() {
             return nbt;
         }
+
+        public String getIcon() {
+            return icon;
+        }
+
+        public void setIcon(String icon) {
+            this.icon = icon;
+        }
+
+        public String getDisplayname() {
+            return displayname;
+        }
+
+        public void setDisplayname(String displayname) {
+            this.displayname = displayname;
+        }
     }
 
     public class CraftTaskItem {
         private String name;
+        private String displayname;
         private int meta;
-
+        private String icon;
         private String nbt;
 
         private boolean isCrafting;
@@ -338,6 +375,22 @@ public class TileAEMonitor extends TileEntity {
 
         public String getNbt() {
             return nbt;
+        }
+
+        public String getIcon() {
+            return icon;
+        }
+
+        public void setIcon(String icon) {
+            this.icon = icon;
+        }
+
+        public String getDisplayname() {
+            return displayname;
+        }
+
+        public void setDisplayname(String displayname) {
+            this.displayname = displayname;
         }
     }
 
@@ -400,7 +453,7 @@ public class TileAEMonitor extends TileEntity {
         this.posTuple = posTuple;
     }
 
-    private String writeNBTAsBase64(NBTTagCompound nbt) {
+    public static String writeNBTAsBase64(NBTTagCompound nbt) {
         if(nbt == null) {
             return null;
         }
@@ -437,7 +490,7 @@ public class TileAEMonitor extends TileEntity {
             TileEntity tileEntity = worldObj.getTileEntity(xCoord + directionAETile.offsetX, yCoord + directionAETile.offsetY, zCoord + directionAETile.offsetZ);
             if (tileEntity instanceof IGridProxyable) {
                 try {
-                    int[] i = {1};
+                    int[] i = {0};
                     List<CraftingCPUInfo> list = ((IGridProxyable) tileEntity).getProxy().getCrafting().getCpus().stream().map(e -> {
                         CraftingCPUInfo craftingCPUInfo = new CraftingCPUInfo();
                         craftingCPUInfo.setIdx(i[0]);
@@ -445,8 +498,10 @@ public class TileAEMonitor extends TileEntity {
                         IAEItemStack finalOutput = e.getFinalOutput();
                         if (finalOutput != null && ((CraftingCPUCluster) e).getRemainingOperations() > 0) {
                             craftingCPUInfo.item = Item.itemRegistry.getNameForObject(finalOutput.getItem());
+                            craftingCPUInfo.icon = getIcon(finalOutput.getItemStack());
                             craftingCPUInfo.meta = finalOutput.getItemDamage();
                             craftingCPUInfo.remainingCount = e.getRemainingItemCount();
+                            craftingCPUInfo.displayname = finalOutput.getItemStack().getDisplayName();
                             craftingCPUInfo.nbt = writeNBTAsBase64(finalOutput.getItemStack().getTagCompound());
                         }
                         craftingCPUInfo.parallelism = e.getCoProcessors();
@@ -482,6 +537,8 @@ public class TileAEMonitor extends TileEntity {
                 craftTaskItem.meta = iaeItemStack.getItemDamage();
                 craftTaskItem.numberRemainingToCraft = iaeItemStack.getCountRequestable();
                 craftTaskItem.nbt = writeNBTAsBase64(iaeItemStack.getItemStack().getTagCompound());
+                craftTaskItem.icon = getIcon(iaeItemStack.getItemStack());
+                craftTaskItem.displayname =  iaeItemStack.getItemStack().getDisplayName();
                 IAEItemStack missing = iaeItemStack.copy();
                 IAEItemStack toExtract = items.extractItems(iaeItemStack, Actionable.SIMULATE, new MachineSource((IActionHost) gridProxyable.getProxy().getMachine()));
                 if (toExtract == null) {
@@ -548,6 +605,8 @@ public class TileAEMonitor extends TileEntity {
                     craftTaskItem.nbt = writeNBTAsBase64(iaeItemStack.getItemStack().getTagCompound());
                     craftTaskItem.isCrafting = false;
                     craftTaskItem.numberRemainingToCraft = iaeItemStack.getStackSize();
+                    craftTaskItem.icon = getIcon(iaeItemStack.getItemStack());
+                    craftTaskItem.displayname = iaeItemStack.getItemStack().getDisplayName();
                     items.put(Pair.of(craftTaskItem.name, Pair.of(iaeItemStack.getItemStack().getTagCompound(), craftTaskItem.meta)), craftTaskItem);
                 }
                 for (IAEItemStack iaeItemStack : active) {
@@ -561,6 +620,8 @@ public class TileAEMonitor extends TileEntity {
                         craftTaskItem = new CraftTaskItem();
                         craftTaskItem.name = n;
                         craftTaskItem.meta = d;
+                        craftTaskItem.icon = getIcon(iaeItemStack.getItemStack());
+                        craftTaskItem.displayname = iaeItemStack.getItemStack().getDisplayName();
                         craftTaskItem.nbt = writeNBTAsBase64(iaeItemStack.getItemStack().getTagCompound());
                         items.put(Pair.of(craftTaskItem.name, Pair.of(iaeItemStack.getItemStack().getTagCompound(), craftTaskItem.meta)), craftTaskItem);
                     }
@@ -578,6 +639,8 @@ public class TileAEMonitor extends TileEntity {
                         craftTaskItem = new CraftTaskItem();
                         craftTaskItem.name = n;
                         craftTaskItem.meta = d;
+                        craftTaskItem.icon = getIcon(iaeItemStack.getItemStack());
+                        craftTaskItem.displayname = iaeItemStack.getItemStack().getDisplayName();
                         craftTaskItem.nbt = writeNBTAsBase64(iaeItemStack.getItemStack().getTagCompound());
                         items.put(Pair.of(craftTaskItem.name, Pair.of(iaeItemStack.getItemStack().getTagCompound(), craftTaskItem.meta)), craftTaskItem);
                     }
@@ -658,7 +721,7 @@ public class TileAEMonitor extends TileEntity {
                 tasks.add(r);
                 return r.get();
             } catch (GridAccessException e) {
-                return Response.ofError(e.getMessage());
+                return Response.ofError("An exception throwed when accessing AE grid, please try again later.");
             } catch (ExecutionException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -684,6 +747,8 @@ public class TileAEMonitor extends TileEntity {
                     itemStackResponse.nbt = writeNBTAsBase64(iaeItemStack.getItemStack().getTagCompound());
                     itemStackResponse.count = iaeItemStack.getStackSize();
                     itemStackResponse.craftable = iaeItemStack.isCraftable();
+                    itemStackResponse.icon = getIcon(iaeItemStack.getItemStack());
+                    itemStackResponse.displayname = iaeItemStack.getItemStack().getDisplayName();
                     list.add(itemStackResponse);
                 }
                 return Response.ofSuccess(list);
@@ -716,7 +781,5 @@ public class TileAEMonitor extends TileEntity {
         });
         tasks.add(voidFutureTask);
         voidFutureTask.get();
-        return;
-
     }
 }
